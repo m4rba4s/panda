@@ -1,0 +1,80 @@
+#include "board/config.h"
+#include "board/utils.h"
+#include <stdint.h>
+#include <stdbool.h>
+#include "board/libc.h"
+#include "board/drivers/uart.h"
+
+__attribute__((aligned(32), noinline)) void delay(uint32_t a) {
+  // loop is 2.6x faster when 32-byte aligned (ART accelerator prefetches flash in 32-byte chunks)
+  volatile uint32_t i;
+  uint32_t n = a * 13U / 5U;
+  for (i = 0; i < n; i++) {}
+}
+
+void assert_fatal(bool condition, const char *msg) {
+  if (!condition) {
+    print("ASSERT FAILED\n");
+    print(msg);
+    while (1) {
+      // hang
+    }
+  }
+}
+
+// cppcheck-suppress misra-c2012-21.2
+void *memset(void *str, int c, size_t n) {
+  uint8_t *s = str;
+  for (unsigned int i = 0; i < n; i++) {
+    *s = c;
+    s++;
+  }
+  return str;
+}
+
+// cppcheck-suppress misra-c2012-21.2
+void *memcpy(void *dest, const void *src, size_t n) {
+  uint8_t *d8 = dest;
+  const uint8_t *s8 = src;
+
+  if ((n >= 4U) && !UNALIGNED(s8, d8)) {
+    uint32_t *d32 = (uint32_t *)d8; // cppcheck-suppress misra-c2012-11.3 ; already checked that it's properly aligned
+    const uint32_t *s32 = (const uint32_t *)s8; // cppcheck-suppress misra-c2012-11.3 ; already checked that it's properly aligned
+
+    while(n >= 16U) {
+      *d32 = *s32; d32++; s32++;
+      *d32 = *s32; d32++; s32++;
+      *d32 = *s32; d32++; s32++;
+      *d32 = *s32; d32++; s32++;
+      n -= 16U;
+    }
+
+    while(n >= 4U) {
+      *d32 = *s32; d32++; s32++;
+      n -= 4U;
+    }
+
+    d8 = (uint8_t *)d32;
+    s8 = (const uint8_t *)s32;
+  }
+  while (n-- > 0U) {
+    *d8 = *s8; d8++; s8++;
+  }
+  return dest;
+}
+
+// cppcheck-suppress misra-c2012-21.2
+int memcmp(const void * ptr1, const void * ptr2, size_t num) {
+  int ret = 0;
+  const uint8_t *p1 = ptr1;
+  const uint8_t *p2 = ptr2;
+  for (unsigned int i = 0; i < num; i++) {
+    if (*p1 != *p2) {
+      ret = -1;
+      break;
+    }
+    p1++;
+    p2++;
+  }
+  return ret;
+}

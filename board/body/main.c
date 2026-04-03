@@ -9,7 +9,7 @@
 #include "board/obj/gitversion.h"
 #include "board/body/motor_control.h"
 #include "board/body/can.h"
-#include "opendbc/safety/safety.h"
+#include "opendbc/safety/declarations.h"
 #include "board/drivers/can_common.h"
 #include "board/drivers/fdcan.h"
 #include "board/can_comms.h"
@@ -17,13 +17,6 @@
 extern int _app_start[0xc000];
 
 #include "board/body/main_comms.h"
-
-void debug_ring_callback(uart_ring *ring) {
-  char rcv;
-  while (get_char(ring, &rcv)) {
-    (void)injectc(ring, rcv);
-  }
-}
 
 void __attribute__ ((noinline)) enable_fpu(void) {
   SCB->CPACR |= ((3UL << (10U * 2U)) | (3UL << (11U * 2U)));
