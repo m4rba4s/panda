@@ -25,3 +25,14 @@ void fault_recovered(uint32_t fault) {
     print("Cannot recover from a permanent fault!\n");
   }
 }
+
+void assert_fatal(bool condition, const char* msg) {
+  if (!condition) {
+    print("FATAL ASSERT: ");
+    print(msg);
+    print("\n");
+    while (true) {
+      // Hang the system on fatal assert
+    }
+  }
+}

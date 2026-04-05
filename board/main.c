@@ -1,4 +1,3 @@
-// cppcheck-suppress-file misra-c2012-2.3
 // ********************* Includes *********************
 #include "board/config.h"
 
