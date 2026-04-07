@@ -11,9 +11,6 @@
   void *memcpy(void *dest, const void *src, size_t n);
   // cppcheck-suppress misra-c2012-21.2
   int memcmp(const void *s1, const void *s2, size_t n);
-#else
-  // Host test build (macOS/Ubuntu): Use system headers ONLY
-  #include <string.h>
 #endif
 
 #endif

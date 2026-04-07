@@ -16,6 +16,15 @@
   (_a > _b) ? _a : _b; \
 })
 
+#define CLAMP(x, low, high) ({ \
+  __typeof__ (x) _x = (x); \
+  __typeof__ (low) _low = (low); \
+  __typeof__ (high) _high = (high); \
+  (_x < _low) ? _low : ((_x > _high) ? _high : _x); \
+})
+
+#define ABS(a) (((a) < 0) ? (-(a)) : (a))
+
 #define UNALIGNED(ptr1, ptr2) (((uint32_t)(ptr1) | (uint32_t)(ptr2)) & 3U)
 
 #define COMPILE_TIME_ASSERT(condition) ((void)sizeof(char[1 - (2 * ((condition) ? 0 : 1))]))

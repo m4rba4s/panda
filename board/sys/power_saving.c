@@ -1,4 +1,5 @@
 #include "board/config.h"
+#include "board/main_declarations.h"
 #include "board/sys/power_saving.h"
 #include "board/drivers/harness.h"
 #include "board/drivers/fdcan.h"
@@ -10,32 +11,43 @@ volatile bool stop_mode_requested = false;
 #endif
 
 void enable_can_transceivers(bool enabled) {
+#if !defined(PANDA_JUNGLE) && !defined(PANDA_BODY)
   uint8_t main_bus = (harness.status == HARNESS_STATUS_FLIPPED) ? 3U : 1U;
   for(uint8_t i=1U; i<=4U; i++){
     current_board->enable_can_transceiver(i, (i == main_bus) || enabled);
   }
+#else
+  UNUSED(enabled);
+#endif
 }
 
 void set_power_save_state(bool enable) {
   if (enable != power_save_enabled) {
     if (enable) {
       print("enable power savings\n");
+#if !defined(PANDA_JUNGLE) && !defined(PANDA_BODY)
       if (harness.status == HARNESS_STATUS_FLIPPED) { llcan_irq_disable(cans[0]); }
       else { llcan_irq_disable(cans[2]); }
+#endif
       llcan_irq_disable(cans[1]);
     } else {
       print("disable power savings\n");
+#if !defined(PANDA_JUNGLE) && !defined(PANDA_BODY)
       if (harness.status == HARNESS_STATUS_FLIPPED) { llcan_irq_enable(cans[0]); }
       else { llcan_irq_enable(cans[2]); }
+#endif
       llcan_irq_enable(cans[1]);
     }
     enable_can_transceivers(!enable);
+#if !defined(PANDA_JUNGLE) && !defined(PANDA_BODY)
     if(enable){ current_board->set_ir_power(0U); }
+#endif
     power_save_enabled = enable;
   }
 }
 
 void enter_stop_mode(void) {
+#if !defined(PANDA_JUNGLE) && !defined(PANDA_BODY)
   register_set(&(GPIOA->MODER), 0xFFFFFFFFU, 0xFFFFFFFFU);
   register_set(&(GPIOB->MODER), 0xFFFFFFFFU, 0xFFFFFFFFU);
   register_set(&(GPIOC->MODER), 0xFFFFFFFFU, 0xFFFFFFFFU);
@@ -78,4 +90,8 @@ void enter_stop_mode(void) {
   NVIC_EnableIRQ(EXTI1_IRQn); NVIC_EnableIRQ(EXTI4_IRQn); NVIC_EnableIRQ(EXTI9_5_IRQn); NVIC_EnableIRQ(EXTI15_10_IRQn);
   __DSB(); __ISB(); __WFI();
   NVIC_SystemReset();
+#else
+  print("enter_stop_mode not implemented for this target\n");
+  NVIC_SystemReset();
+#endif
 }

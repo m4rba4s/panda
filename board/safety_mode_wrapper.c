@@ -1,7 +1,14 @@
-// cppcheck-suppress-file misra-c2012-2.3
 #include "board/config.h"
-#include "board/boards/board_declarations.h"
 #include "board/main_declarations.h"
+
+#if defined(PANDA_JUNGLE)
+  #include "board/jungle/boards/board_declarations.h"
+#elif defined(PANDA_BODY)
+  #include "board/body/boards/board_declarations.h"
+#else
+  #include "board/boards/board_declarations.h"
+#endif
+
 #include "board/drivers/harness.h"
 #include "board/drivers/can_common.h"
 #include "board/drivers/fdcan.h"
@@ -26,43 +33,38 @@ void set_safety_mode(uint16_t mode, uint32_t param) {
     print("Error: safety set mode failed. Falling back to SILENT\n");
     mode_copy = SAFETY_SILENT;
     err = set_safety_hooks(mode_copy, 0U);
-    // TERMINAL ERROR: we can't continue if SILENT safety mode isn't succesfully set
     assert_fatal(err == 0, "Error: Failed setting SILENT mode. Hanging\n");
   }
-  safety_tx_blocked = 0;
-  safety_rx_invalid = 0;
 
   switch (mode_copy) {
     case SAFETY_SILENT:
       set_intercept_relay(false, false);
+#if !defined(PANDA_JUNGLE) && !defined(PANDA_BODY)
       current_board->set_can_mode(CAN_MODE_NORMAL);
+#endif
       can_silent = true;
       break;
     case SAFETY_NOOUTPUT:
       set_intercept_relay(false, false);
+#if !defined(PANDA_JUNGLE) && !defined(PANDA_BODY)
       current_board->set_can_mode(CAN_MODE_NORMAL);
-      can_silent = false;
+#endif
+      can_silent = true;
       break;
-    case SAFETY_ELM327:
+    case SAFETY_ALLOUTPUT:
       set_intercept_relay(false, false);
-      heartbeat_counter = 0U;
-      heartbeat_lost = false;
-
-      // Clear any pending messages in the can core (i.e. sending while comma power is unplugged)
-      // TODO: rewrite using hardware queues rather than fifo to cancel specific messages
-      can_clear_send(CANIF_FROM_CAN_NUM(1), 1);
-      if (param == 0U) {
-        current_board->set_can_mode(CAN_MODE_OBD_CAN2);
-      } else {
-        current_board->set_can_mode(CAN_MODE_NORMAL);
-      }
+#if !defined(PANDA_JUNGLE) && !defined(PANDA_BODY)
+      current_board->set_can_mode(CAN_MODE_NORMAL);
+#endif
       can_silent = false;
       break;
     default:
       set_intercept_relay(true, false);
       heartbeat_counter = 0U;
       heartbeat_lost = false;
+#if !defined(PANDA_JUNGLE) && !defined(PANDA_BODY)
       current_board->set_can_mode(CAN_MODE_NORMAL);
+#endif
       can_silent = false;
       break;
   }

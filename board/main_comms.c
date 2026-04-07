@@ -1,8 +1,16 @@
-// cppcheck-suppress-file misra-c2012-2.3
 #include "board/config.h"
+#include "board/main_declarations.h"
+
+#if defined(PANDA_JUNGLE)
+  #include "board/jungle/boards/board_declarations.h"
+#elif defined(PANDA_BODY)
+  #include "board/body/boards/board_declarations.h"
+#else
+  #include "board/boards/board_declarations.h"
+#endif
+
 #include "board/utils.h"
 #include "board/libc.h"
-#include "board/main_declarations.h"
 #include "board/main_comms.h"
 #include "board/drivers/interrupts.h"
 #include "board/drivers/usb.h"
@@ -21,8 +29,13 @@
 void get_health_pkt(struct health_t *health) {
   (void)memset(health, 0, sizeof(struct health_t));
   health->uptime_pkt = uptime_cnt;
+#if defined(PANDA_JUNGLE) || defined(PANDA_BODY)
+  health->voltage_pkt = 0;
+  health->current_pkt = 0;
+#else
   health->voltage_pkt = current_board->read_voltage_mV();
   health->current_pkt = current_board->read_current_mA();
+#endif
   health->safety_tx_blocked_pkt = (uint32_t)safety_tx_blocked;
   health->safety_rx_invalid_pkt = (uint32_t)safety_rx_invalid;
   health->tx_buffer_overflow_pkt = 0; // TODO
@@ -31,7 +44,11 @@ void get_health_pkt(struct health_t *health) {
   health->ignition_line_pkt = 0; // TODO: handle hardware ignition line if needed
   health->ignition_can_pkt = ignition_can ? 1U : 0U;
   health->controls_allowed_pkt = controls_allowed ? 1U : 0U;
+#if defined(PANDA_JUNGLE) || defined(PANDA_BODY)
+  health->car_harness_status_pkt = 0;
+#else
   health->car_harness_status_pkt = (uint8_t)harness_check_ignition();
+#endif
   health->safety_mode_pkt = (uint8_t)current_safety_mode;
   health->safety_param_pkt = (uint16_t)current_safety_param;
   health->fault_status_pkt = fault_status;
@@ -39,7 +56,11 @@ void get_health_pkt(struct health_t *health) {
   health->heartbeat_lost_pkt = heartbeat_lost ? 1U : 0U;
   health->alternative_experience_pkt = (uint16_t)alternative_experience;
   health->interrupt_load_pkt = interrupt_load;
+#if defined(PANDA_JUNGLE) || defined(PANDA_BODY)
+  health->fan_power = 0;
+#else
   health->fan_power = fan_state.power;
+#endif
   health->safety_rx_checks_invalid_pkt = 0; // TODO
   health->spi_error_count_pkt = spi_error_count;
 }
@@ -51,7 +72,9 @@ void comms_endpoint2_write(const uint8_t *data, uint32_t len) {
 
 int comms_control_handler(ControlPacket_t *req, uint8_t *resp) {
   int resp_len = 0;
+#if !defined(PANDA_JUNGLE) && !defined(PANDA_BODY)
   uint16_t fan_speed_req;
+#endif
 
   switch (req->request) {
     // **** 0xc1: get hardware type
@@ -104,9 +127,11 @@ int comms_control_handler(ControlPacket_t *req, uint8_t *resp) {
       break;
     // **** 0xda: car specific hook
     case 0xda:
+#if !defined(PANDA_JUNGLE) && !defined(PANDA_BODY)
       if (hw_type == HW_TYPE_TRES) {
         tres_set_can_mode((uint8_t)req->param1);
       }
+#endif
       break;
     // **** 0xdc: set safety param
     case 0xdc:
@@ -114,19 +139,22 @@ int comms_control_handler(ControlPacket_t *req, uint8_t *resp) {
       break;
     // **** 0xdd: get car specific hook
     case 0xdd:
+#if !defined(PANDA_JUNGLE) && !defined(PANDA_BODY)
       if (hw_type == HW_TYPE_TRES) {
         resp[0] = tres_read_som_gpio() ? 1U : 0U;
         resp_len = 1;
       }
+#endif
       break;
     // **** 0xdf: set fan speed
     case 0xdf:
+#if !defined(PANDA_JUNGLE) && !defined(PANDA_BODY)
       fan_speed_req = (uint16_t)req->param1;
       fan_set_power((uint8_t)fan_speed_req);
+#endif
       break;
     // **** 0xe0: set usb power
     case 0xe0:
-      // current_board->set_usb_power(req->param1 != 0U);
       break;
     // **** 0xe1: set internal relay
     case 0xe1:
@@ -146,16 +174,20 @@ int comms_control_handler(ControlPacket_t *req, uint8_t *resp) {
       break;
     // **** 0xe6: get car specific hook
     case 0xe6:
+#if !defined(PANDA_JUNGLE) && !defined(PANDA_BODY)
       if (current_board->harness_config != NULL) {
         resp[0] = (uint8_t)harness_check_ignition();
         resp_len = 1;
       }
+#endif
       break;
     // **** 0xe7: set car specific hook
     case 0xe7:
+#if !defined(PANDA_JUNGLE) && !defined(PANDA_BODY)
       if (current_board->harness_config != NULL) {
-        can_set_orientation((uint8_t)req->param1);
+        harness_set_orientation((uint8_t)req->param1);
       }
+#endif
       break;
     // **** 0xf1: clear can ring
     case 0xf1:
@@ -167,7 +199,9 @@ int comms_control_handler(ControlPacket_t *req, uint8_t *resp) {
       resp_len = 1;
       break;
     default:
+#if !defined(PANDA_JUNGLE) && !defined(PANDA_BODY)
       resp_len = current_board->board_comms_handler(req, resp);
+#endif
       break;
   }
   return resp_len;

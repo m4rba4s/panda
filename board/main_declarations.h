@@ -3,9 +3,18 @@
 
 #include <stdint.h>
 #include <stdbool.h>
-#include "board/drivers/driver_declarations.h"
+
+// Forward declaration to avoid redefinition conflicts between Panda and Jungle
+typedef struct board board;
+
+typedef enum {
+  BOOT_STANDBY,
+  BOOT_BOOTKICK,
+  BOOT_RESET,
+} BootState;
 
 extern void __initialize_hardware_early(void);
+extern void __initialize_hardware(void);
 
 extern uint8_t hw_type;
 extern const board *current_board;

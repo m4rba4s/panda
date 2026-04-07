@@ -2,6 +2,7 @@
 
 #include <stdint.h>
 #include <stdbool.h>
+#include "board/main_declarations.h"
 #include "board/comms_definitions.h"
 
 #ifdef STM32H7
@@ -11,12 +12,6 @@
 #endif
 
 // ******************** Prototypes ********************
-typedef enum {
-  BOOT_STANDBY,
-  BOOT_BOOTKICK,
-  BOOT_RESET,
-} BootState;
-
 typedef void (*board_init)(void);
 typedef void (*board_init_bootloader)(void);
 typedef void (*board_enable_can_transceiver)(uint8_t transceiver, bool enabled);

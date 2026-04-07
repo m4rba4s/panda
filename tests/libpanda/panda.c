@@ -1,3 +1,4 @@
+#include <string.h>
 #include "fake_stm.h"
 #include "config.h"
 #include "can.h"
@@ -28,3 +29,4 @@ FDCAN_GlobalTypeDef *cans[PANDA_CAN_CNT] = {NULL, NULL, NULL};
 
 void set_intercept_relay(bool intercept, bool ignition_relay) { UNUSED(intercept); UNUSED(ignition_relay); }
 void can_clear_send(FDCAN_GlobalTypeDef *FDCANx, uint8_t can_number) { UNUSED(FDCANx); UNUSED(can_number); }
+void assert_fatal(bool condition, const char* msg) { if (!condition) { printf("FATAL: %s\n", msg); exit(1); } }

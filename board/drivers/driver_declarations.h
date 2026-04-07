@@ -7,7 +7,6 @@
 // Include board/can.h to get CANPacket_t and can_ring definitions correctly
 #include "board/can.h"
 
-typedef struct board board;
 typedef struct harness_configuration harness_configuration;
 
 typedef struct {

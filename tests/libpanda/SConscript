@@ -1,24 +1,25 @@
+import os
 import opendbc
 
-env = Environment(
-  CFLAGS=[
-    '-nostdlib',
-    '-fno-builtin',
-    '-std=gnu11',
-    '-Wfatal-errors',
-    '-Wno-pointer-to-int-cast',
-  ],
-  CPPPATH=[".", "../../", "../../board/", opendbc.INCLUDE_PATH],
-)
+Import('env')
 
-panda = env.SharedObject("panda.os", "panda.c")
-fake_stm = env.SharedObject("fake_stm.os", "../../board/fake_stm.c")
-can_common = env.SharedObject("can_common.os", "../../board/drivers/can_common.c")
-can_comms = env.SharedObject("can_comms.os", "../../board/can_comms.c")
-main_definitions = env.SharedObject("main_definitions.os", "../../board/main_definitions.c")
-utils = env.SharedObject("utils.os", "../../board/utils.c")
-libc = env.SharedObject("libc.os", "../../board/libc.c")
-safety_definitions = env.SharedObject("safety_definitions.os", "../../board/safety_definitions.c")
-safety_mode_wrapper = env.SharedObject("safety_mode_wrapper.os", "../../board/safety_mode_wrapper.c")
+opendbc_path = opendbc.INCLUDE_PATH
 
-libpanda = env.SharedLibrary("libpanda.so", [panda, fake_stm, can_common, can_comms, main_definitions, utils, libc, safety_definitions, safety_mode_wrapper])
+libpanda_srcs = [
+  'panda.c',
+  '../../board/main_definitions.c',
+  '../../board/fake_stm.c',
+  '../../board/drivers/can_common.c',
+  '../../board/can_comms.c',
+  '../../board/utils.c',
+  '../../board/libc.c',
+  '../../board/safety_definitions.c',
+  '../../board/safety_mode_wrapper.c',
+]
+
+env = env.Clone()
+env.Append(CPPPATH=['#', '.', '#board', opendbc_path])
+env.Append(CCFLAGS=['-nostdlib', '-fno-builtin', '-std=gnu11', '-Wfatal-errors', '-Wno-pointer-to-int-cast'])
+
+libpanda = env.SharedLibrary('libpanda', libpanda_srcs)
+Return('libpanda')

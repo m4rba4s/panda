@@ -13,6 +13,10 @@
 #define HARNESS_STATUS_NORMAL 1U
 #define HARNESS_STATUS_FLIPPED 2U
 
+#define HARNESS_ORIENTATION_NONE 0U
+#define HARNESS_ORIENTATION_NORMAL 1U
+#define HARNESS_ORIENTATION_FLIPPED 2U
+
 struct harness_t {
   uint8_t status;
   uint16_t sbu1_voltage_mV;
@@ -23,9 +27,10 @@ struct harness_t {
 
 extern struct harness_t harness;
 
-void set_intercept_relay(bool intercept, bool ignition_relay);
-bool harness_check_ignition(void);
-void harness_tick(void);
 void harness_init(void);
+void set_intercept_relay(bool intercept, bool ignition_relay);
+uint8_t harness_check_ignition(void);
+void harness_set_orientation(uint8_t orientation);
+void harness_tick(void);
 
 #endif
